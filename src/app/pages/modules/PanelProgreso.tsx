@@ -141,10 +141,14 @@ export default function PanelProgreso() {
   const learnedLetters = progreso?.letras_dominadas || [];
   const totalLetters = 27;
 
-  const getNivel = (nivel: number) => {
-    if (nivel <= 1) return "Explorador";
-    if (nivel === 2) return "Aventurero";
-    if (nivel === 3) return "Campeón";
+  const generalProgress = progreso
+    ? Math.round(((learnedLetters.length / totalLetters) * 100 + (progreso.progreso_desafios || 0)) / 2)
+    : 0;
+
+  const getNivel = (progresoGen: number) => {
+    if (progresoGen < 25) return "Explorador";
+    if (progresoGen < 60) return "Aventurero";
+    if (progresoGen < 90) return "Campeón";
     return "Maestro";
   };
 
@@ -189,7 +193,7 @@ export default function PanelProgreso() {
                 🏆 Panel de Progreso
               </h1>
               <p className="text-[1.2rem] font-bold">
-                {perfil?.nombre_completo || user?.name} • Nivel: {getNivel(progreso?.nivel_actual || 1)}
+                {perfil?.nombre_completo || user?.name} • Nivel: {getNivel(generalProgress)}
               </p>
             </div>
             <div className="text-[4rem]">🦖</div>
