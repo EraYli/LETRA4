@@ -12,6 +12,8 @@ interface Progreso {
   ultima_conexion: string;
   racha_dias: number;
   actividad_semanal: { day: string; completed: number }[];
+  progreso_desafios?: number;
+  nivel_actual_desafios?: number;
 }
 
 interface Logro {
@@ -48,9 +50,13 @@ export default function PanelProgreso() {
 
       if (perfilData) setPerfil(perfilData);
 
+      const { data: modulos } = await supabase
+        .from('modulos')
+        .select('id, titulo');
+
       const { data: progresoData } = await supabase
         .from('progreso_usuarios')
-        .select('letras_dominadas, nivel_actual, puntuacion_total, ultima_conexion, racha_dias, actividad_semanal')
+        .select('modulo_id, letras_dominadas, nivel_actual, puntuacion_total, ultima_conexion, racha_dias, actividad_semanal')
         .eq('usuario_id', targetId);
 
       if (progresoData && progresoData.length > 0) {
@@ -61,6 +67,12 @@ export default function PanelProgreso() {
         const ultimaConexion = progresoData.sort((a, b) =>
           new Date(b.ultima_conexion).getTime() - new Date(a.ultima_conexion).getTime()
         )[0].ultima_conexion;
+
+        const desafiosModulo = modulos?.find(m => m.titulo === "Desafíos de Ortografía");
+        const progDesafios = progresoData.find(p => p.modulo_id === desafiosModulo?.id);
+        const nivelDesafios = progDesafios?.nivel_actual || 1;
+        const completedLevelsDesafios = Math.max(0, nivelDesafios - 1);
+        const porcentajeDesafios = Math.min(Math.round((completedLevelsDesafios / 3) * 100), 100);
 
         const actividadSemanal = [
           { day: "Lun", completed: 0 },
@@ -87,6 +99,8 @@ export default function PanelProgreso() {
           ultima_conexion: ultimaConexion,
           racha_dias: rachaMax,
           actividad_semanal: actividadSemanal,
+          progreso_desafios: porcentajeDesafios,
+          nivel_actual_desafios: nivelDesafios,
         });
       } else {
         setProgreso({
@@ -104,6 +118,8 @@ export default function PanelProgreso() {
             { day: "Sáb", completed: 0 },
             { day: "Dom", completed: 0 },
           ],
+          progreso_desafios: 0,
+          nivel_actual_desafios: 1,
         });
       }
 
@@ -181,41 +197,49 @@ export default function PanelProgreso() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
-            <div className="text-[3rem] mb-2">📚</div>
-            <p className="font-['Fredoka_One',cursive] text-[2rem] text-[#6B21A8]">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
+            <div className="text-[2.5rem] mb-2">📚</div>
+            <p className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#6B21A8]">
               {learnedLetters.length}/{totalLetters}
             </p>
-            <p className="font-bold text-gray-600">Letras aprendidas</p>
+            <p className="font-bold text-gray-600 text-sm">Letras aprendidas</p>
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
-            <div className="text-[3rem] mb-2">🔥</div>
-            <p className="font-['Fredoka_One',cursive] text-[2rem] text-[#F97316]">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
+            <div className="text-[2.5rem] mb-2">✍️</div>
+            <p className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#16A34A]">
+              {progreso?.progreso_desafios || 0}%
+            </p>
+            <p className="font-bold text-gray-600 text-sm">Desafíos Ortografía</p>
+          </motion.div>
+
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
+            <div className="text-[2.5rem] mb-2">🔥</div>
+            <p className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#F97316]">
               {progreso?.racha_dias || 0}
             </p>
-            <p className="font-bold text-gray-600">Días consecutivos</p>
+            <p className="font-bold text-gray-600 text-sm">Días consecutivos</p>
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
-            <div className="text-[3rem] mb-2">⭐</div>
-            <p className="font-['Fredoka_One',cursive] text-[2rem] text-[#FACC15]">
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
+            <div className="text-[2.5rem] mb-2">⭐</div>
+            <p className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#FACC15]">
               {progreso?.puntuacion_total || 0}
             </p>
-            <p className="font-bold text-gray-600">Puntos totales</p>
+            <p className="font-bold text-gray-600 text-sm">Puntos totales</p>
           </motion.div>
 
-          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-6 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
-            <div className="text-[3rem] mb-2">📈</div>
-            <p className="font-['Fredoka_One',cursive] text-[2rem] text-[#16A34A]">
-              {Math.round((learnedLetters.length / totalLetters) * 100)}%
+          <motion.div whileHover={{ scale: 1.05 }} className="bg-white rounded-[20px] p-5 shadow-[0_4px_20px_rgba(107,33,168,0.08)] text-center">
+            <div className="text-[2.5rem] mb-2">📈</div>
+            <p className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#7C3AED]">
+              {Math.round(((learnedLetters.length / totalLetters) * 100 + (progreso?.progreso_desafios || 0)) / 2)}%
             </p>
-            <p className="font-bold text-gray-600">Progreso</p>
+            <p className="font-bold text-gray-600 text-sm">Progreso General</p>
           </motion.div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
           {/* Alphabet Progress */}
           <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
             <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">
@@ -242,6 +266,68 @@ export default function PanelProgreso() {
             </p>
           </div>
 
+          {/* Desafíos de Ortografía Progress */}
+          <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)] flex flex-col justify-between">
+            <div>
+              <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">
+                ✍️ Desafíos de Ortografía
+              </h2>
+              <div className="flex flex-col gap-4">
+                {[
+                  { name: "Fácil", emoji: "🌱", color: "from-[#16A34A] to-[#4ADE80]", level: 1, desc: "Completa 1 letra de la palabra" },
+                  { name: "Medio", emoji: "🔥", color: "from-[#F97316] to-[#FDE68A]", level: 2, desc: "Completa 2 o 3 letras" },
+                  { name: "Difícil", emoji: "⚡", color: "from-[#7C3AED] to-[#A855F7]", level: 3, desc: "Ordena las letras de la palabra" },
+                ].map((lvl) => {
+                  const nivelDesafios = progreso?.nivel_actual_desafios || 1;
+                  const isCompleted = nivelDesafios > lvl.level;
+                  const isUnlocked = nivelDesafios >= lvl.level;
+
+                  return (
+                    <motion.div
+                      key={lvl.name}
+                      whileHover={{ scale: isUnlocked ? 1.02 : 1 }}
+                      className={`rounded-2xl p-4 flex items-center justify-between border-2 transition-all ${
+                        isCompleted
+                          ? "bg-green-50 border-green-300 text-green-800"
+                          : isUnlocked
+                          ? "bg-[#FAF7F0] border-[#c4b5fd] text-gray-800"
+                          : "bg-gray-50 border-gray-200 text-gray-400"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-[1.8rem] ${
+                          isUnlocked ? `bg-gradient-to-br ${lvl.color} text-white shadow-sm` : "bg-gray-200"
+                        }`}>
+                          {lvl.emoji}
+                        </div>
+                        <div>
+                          <h4 className="font-['Fredoka_One',cursive] text-[1.15rem]">{lvl.name}</h4>
+                          <p className="text-[0.8rem] font-semibold opacity-90">{lvl.desc}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isCompleted ? (
+                          <span className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-md">✓</span>
+                        ) : isUnlocked ? (
+                          <span className="bg-[#FAF7F0] border-2 border-[#6B21A8] text-[#6B21A8] rounded-full px-3 py-1 text-[0.75rem] font-extrabold animate-pulse">
+                            JUGANDO
+                          </span>
+                        ) : (
+                          <span className="text-[1.2rem]">🔒</span>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-gray-600 font-semibold mt-4 text-center">
+              {Math.max(0, (progreso?.nivel_actual_desafios || 1) - 1)} de 3 niveles completados
+            </p>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
           {/* Weekly Activity */}
           <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
             <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">
@@ -265,39 +351,39 @@ export default function PanelProgreso() {
               Total de lecciones esta semana: {(progreso?.actividad_semanal || []).reduce((sum, d) => sum + d.completed, 0)}
             </p>
           </div>
-        </div>
 
-        {/* Logros */}
-        <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)] mt-8">
-          <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">
-            🏅 Medallas y logros
-          </h2>
-          {logros.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-[3rem] mb-4">🎯</p>
-              <p className="font-bold text-gray-600">Aún no hay logros</p>
-              <p className="text-gray-500 mt-2">¡Sigue practicando para ganar medallas!</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-6">
-              {logros.map((logro, index) => (
-                <motion.div
-                  key={logro.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="bg-gradient-to-br from-[#FAF7F0] to-[#e9d5ff] rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
-                >
-                  <div className="text-[3.5rem] mb-3">{logro.icono}</div>
-                  <h3 className="font-['Fredoka_One',cursive] text-[1.2rem] text-[#6B21A8] mb-2">{logro.nombre_logro}</h3>
-                  <p className="text-[0.9rem] text-gray-600 font-semibold">
-                    Obtenido: {new Date(logro.fecha_ganado).toLocaleDateString('es-MX')}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          )}
+          {/* Logros */}
+          <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
+            <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">
+              🏅 Medallas y logros
+            </h2>
+            {logros.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[3rem] mb-4">🎯</p>
+                <p className="font-bold text-gray-600">Aún no hay logros</p>
+                <p className="text-gray-500 mt-2">¡Sigue practicando para ganar medallas!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-2">
+                {logros.map((logro, index) => (
+                  <motion.div
+                    key={logro.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-gradient-to-br from-[#FAF7F0] to-[#e9d5ff] rounded-2xl p-4 text-center hover:shadow-md transition-all"
+                  >
+                    <div className="text-[2.2rem] mb-2">{logro.icono}</div>
+                    <h3 className="font-['Fredoka_One',cursive] text-[0.95rem] text-[#6B21A8] mb-1 line-clamp-1">{logro.nombre_logro}</h3>
+                    <p className="text-[0.75rem] text-gray-500 font-semibold">
+                      {new Date(logro.fecha_ganado).toLocaleDateString('es-MX')}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Última conexión */}

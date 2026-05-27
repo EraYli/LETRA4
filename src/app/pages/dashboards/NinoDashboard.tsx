@@ -113,12 +113,16 @@ export default function NinoDashboard() {
                   <div className="text-[3.5rem] mb-3">{module.icon}</div>
                   <h3 className="font-['Fredoka_One',cursive] text-[1.5rem] mb-2">{module.title}</h3>
                   <p className="text-[0.95rem] font-semibold opacity-90 mb-4">{module.description}</p>
-                  {progress < 100 && (
-                    <div className="bg-white/20 rounded-full h-2 mb-2">
-                      <div className="bg-white rounded-full h-2 transition-all" style={{ width: `${progress}%` }} />
-                    </div>
+                  {module.title !== "Mi Progreso" && (
+                    <>
+                      {progress < 100 && (
+                        <div className="bg-white/20 rounded-full h-2 mb-2">
+                          <div className="bg-white rounded-full h-2 transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                      )}
+                      <p className="text-[0.85rem] font-bold opacity-90">{progress}% completado</p>
+                    </>
                   )}
-                  <p className="text-[0.85rem] font-bold opacity-90">{progress}% completado</p>
                 </div>
               </Link>
             );
