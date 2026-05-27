@@ -1,0 +1,149 @@
+import { Link } from "react-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "../../../supabaseClient";
+import DinoLettersBg from "../../components/DinoLettersBg";
+
+export default function NinoDashboard() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [progresoPorModulo, setProgresoPorModulo] = useState<Record<string, number>>({});
+  const [logros, setLogros] = useState<{ icon: string; title: string; desc: string }[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchData = async () => {
+      const { data: modulos } = await supabase.from('modulos').select('id, titulo');
+      if (!modulos) return;
+      const { data: progresos } = await supabase
+        .from('progreso_usuarios')
+        .select('modulo_id, letras_dominadas, puntuacion_total')
+        .eq('usuario_id', user.id);
+
+      const nuevosProgresos: Record<string, number> = {};
+      modulos.forEach((modulo) => {
+        const p = progresos?.find(p => p.modulo_id === modulo.id);
+        if (modulo.titulo === 'Juego de Letras') {
+          nuevosProgresos[modulo.titulo] = Math.round(((p?.letras_dominadas?.length || 0) / 27) * 100);
+        } else if (modulo.titulo === 'Desafíos de Ortografía') {
+          nuevosProgresos[modulo.titulo] = Math.min(Math.round(((p?.puntuacion_total || 0) / 100) * 100), 100);
+        } else {
+          nuevosProgresos[modulo.titulo] = 100;
+        }
+      });
+      setProgresoPorModulo(nuevosProgresos);
+
+      const { data: logrosData } = await supabase
+        .from('logros_medallas')
+        .select('nombre_logro, icono')
+        .eq('usuario_id', user.id)
+        .order('fecha_ganado', { ascending: false })
+        .limit(3);
+
+      if (logrosData && logrosData.length > 0) {
+        setLogros(logrosData.map(l => ({ icon: l.icono, title: l.nombre_logro, desc: "" })));
+      }
+    };
+    fetchData();
+  }, [user]);
+
+  const handleLogout = () => { logout(); navigate("/"); };
+
+  const modules = [
+    { title: "Juego de Letras",        description: "Aprende las letras jugando",  link: "/juego-letras",         gradient: "from-[#7C3AED] to-[#A855F7]", icon: "🔤" },
+    { title: "Desafíos de Ortografía", description: "Practica tu escritura",        link: "/desafios-ortografia",  gradient: "from-[#16A34A] to-[#4ADE80]", icon: "✍️" },
+    { title: "Mi Progreso",            description: "Ve tus logros y medallas",     link: "/mi-progreso",          gradient: "from-[#F97316] to-[#FDE68A]", icon: "🏆" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#c7f2a4] via-[#bae6fd] to-[#e9d5ff] relative overflow-hidden">
+      <DinoLettersBg />
+
+      {/* Header */}
+      <header className="bg-white shadow-[0_2px_12px_rgba(107,33,168,0.10)] px-8 py-4 relative z-10">
+        <div className="max-w-[1200px] mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 no-underline">
+            <span className="text-[2rem]">🦕</span>
+            <span className="font-['Fredoka_One',cursive] text-[1.5rem] text-[#6B21A8]">
+              LETRA<span className="text-[#16A34A]">SAURIO</span>
+            </span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="font-bold text-gray-800">Hola, {user?.name}! 👋</p>
+              <p className="text-[0.85rem] text-gray-600 font-semibold">Niño</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="bg-white border-2 border-[#6B21A8] text-[#6B21A8] font-bold px-4 py-2 rounded-full hover:bg-[#6B21A8] hover:text-white transition-all"
+            >
+              Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-[1200px] mx-auto px-8 py-12 relative z-10">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-br from-[#6B21A8] to-[#7C3AED] text-white rounded-[28px] p-8 mb-8 shadow-[0_8px_30px_rgba(107,33,168,0.2)] relative overflow-hidden">
+          <div className="absolute top-[-20px] right-[-20px] text-[8rem] opacity-10">🦖</div>
+          <div className="relative z-10">
+            <h1 className="font-['Fredoka_One',cursive] text-[2.5rem] mb-3">
+              ¡Bienvenido a tu aventura, {user?.name}! 🌟
+            </h1>
+            <p className="text-[1.1rem] font-semibold opacity-95">
+              ¿Listo para aprender más letras hoy? ¡Elige un módulo y comencemos!
+            </p>
+          </div>
+        </div>
+
+        {/* Modules Grid */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          {modules.map((module, index) => {
+            const progress = progresoPorModulo[module.title] ?? 0;
+            return (
+              <Link
+                key={index} to={module.link}
+                className={`bg-gradient-to-br ${module.gradient} text-white rounded-[24px] p-6 shadow-[0_4px_20px_rgba(107,33,168,0.15)] hover:scale-105 transition-transform no-underline relative overflow-hidden`}
+              >
+                <div className="absolute top-[-30px] right-[-30px] w-[100px] h-[100px] rounded-full bg-white/10" />
+                <div className="relative z-10">
+                  <div className="text-[3.5rem] mb-3">{module.icon}</div>
+                  <h3 className="font-['Fredoka_One',cursive] text-[1.5rem] mb-2">{module.title}</h3>
+                  <p className="text-[0.95rem] font-semibold opacity-90 mb-4">{module.description}</p>
+                  {progress < 100 && (
+                    <div className="bg-white/20 rounded-full h-2 mb-2">
+                      <div className="bg-white rounded-full h-2 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                  )}
+                  <p className="text-[0.85rem] font-bold opacity-90">{progress}% completado</p>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Recent Achievements */}
+        <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
+          <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">🏅 Tus últimos logros</h2>
+          {logros.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-[3rem] mb-2">🎯</p>
+              <p className="font-bold text-gray-600">¡Aún no hay logros, sigue practicando!</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-4">
+              {logros.map((achievement, index) => (
+                <div key={index} className="bg-[#FAF7F0] rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
+                  <div className="text-[3rem] mb-2">{achievement.icon}</div>
+                  <h3 className="font-['Fredoka_One',cursive] text-[1.1rem] text-[#6B21A8] mb-1">{achievement.title}</h3>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

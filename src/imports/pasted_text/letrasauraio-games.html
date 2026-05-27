@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LETRASAURIO – Juegos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple-dark: #3B0764;
+    --purple-main: #6B21A8;
+    --purple-mid: #7C3AED;
+    --purple-light: #A855F7;
+    --green-main: #16A34A;
+    --green-light: #22C55E;
+    --yellow: #FACC15;
+    --orange: #F97316;
+    --red: #EF4444;
+    --blue: #3B82F6;
+    --cream: #FAF7F0;
+    --white: #FFFFFF;
+    --gray-dark: #1F2937;
+    --gray-mid: #4B5563;
+    --gray-light: #F3F4F6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Nunito',sans-serif; background:var(--cream); color:var(--gray-dark); min-height:100vh; }
+
+  /* HEADER */
+  header {
+    background:var(--white); box-shadow:0 2px 12px rgba(107,33,168,.1);
+    padding:0 1.5rem; position:sticky; top:0; z-index:100;
+  }
+  .header-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:64px; }
+  .logo { display:flex; align-items:center; gap:8px; text-decoration:none; }
+  .logo-dino { font-size:1.8rem; display:inline-block; animation:wiggle 2.5s infinite; }
+  @keyframes wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+  .logo-text { font-family:'Fredoka One',cursive; font-size:1.5rem; color:var(--purple-main); }
+  .logo-text span { color:var(--green-main); }
+  .score-bar { display:flex; align-items:center; gap:1rem; }
+  .score-pill {
+    background:var(--purple-main); color:var(--white);
+    font-family:'Fredoka One',cursive; font-size:1rem;
+    padding:6px 18px; border-radius:30px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .medal-pill {
+    background:var(--yellow); color:var(--gray-dark);
+    font-family:'Fredoka One',cursive; font-size:1rem;
+    padding:6px 18px; border-radius:30px;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  /* TABS */
+  .tabs { max-width:1100px; margin:0 auto; display:flex; gap:1rem; padding:1.5rem 1.5rem 0; }
+  .tab-btn {
+    font-family:'Fredoka One',cursive; font-size:1.1rem;
+    padding:10px 28px; border-radius:30px 30px 0 0;
+    border:none; cursor:pointer; transition:all .2s;
+    background:var(--white); color:var(--gray-mid);
+    box-shadow:0 -2px 8px rgba(0,0,0,.06);
+  }
+  .tab-btn.active { background:var(--purple-main); color:var(--white); }
+
+  /* MAIN */
+  main { max-width:1100px; margin:0 auto; padding:0 1.5rem 3rem; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  /* ─── JUEGO DE LETRAS ─── */
+  .game-container {
+    background:var(--white); border-radius:0 24px 24px 24px;
+    padding:2.5rem; box-shadow:0 4px 20px rgba(107,33,168,.08);
+  }
+  .game-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+  .game-title { font-family:'Fredoka One',cursive; font-size:1.8rem; color:var(--purple-dark); }
+  .progress-bar-wrap { background:var(--gray-light); border-radius:10px; height:12px; width:220px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--purple-main),var(--purple-light)); border-radius:10px; transition:width .4s; }
+
+  /* Letter card */
+  .letter-stage { text-align:center; }
+  .big-letter {
+    font-family:'Fredoka One',cursive;
+    font-size:clamp(6rem,18vw,9rem);
+    color:var(--purple-main);
+    line-height:1;
+    display:inline-block;
+    animation:popIn .4s cubic-bezier(.34,1.56,.64,1);
+    cursor:pointer;
+    user-select:none;
+    text-shadow:3px 4px 0 rgba(107,33,168,.18);
+    transition:transform .1s;
+  }
+  .big-letter:active { transform:scale(.92); }
+  @keyframes popIn { 0%{transform:scale(.4);opacity:0} 100%{transform:scale(1);opacity:1} }
+  .letter-hint { font-size:1rem; color:var(--gray-mid); font-weight:700; margin:0.5rem 0 2rem; }
+
+  /* Image options */
+  .img-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1.2rem; margin-top:1.5rem; }
+  .img-card {
+    background:var(--gray-light); border-radius:20px; padding:1.2rem 0.8rem;
+    text-align:center; cursor:pointer; border:3px solid transparent;
+    transition:all .2s; font-size:4rem; line-height:1;
+  }
+  .img-card:hover { border-color:var(--purple-light); transform:scale(1.05); }
+  .img-card.correct { background:#dcfce7; border-color:var(--green-main); animation:pulse .4s; }
+  .img-card.wrong { background:#fee2e2; border-color:var(--red); animation:shake .3s; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .img-label { font-size:.9rem; font-weight:800; color:var(--gray-mid); margin-top:8px; display:block; }
+
+  /* Audio btn */
+  .btn-sound {
+    background:var(--purple-main); color:var(--white);
+    border:none; border-radius:50%; width:56px; height:56px;
+    font-size:1.5rem; cursor:pointer; transition:transform .15s;
+    display:inline-flex; align-items:center; justify-content:center;
+    margin:0 auto 1rem;
+  }
+  .btn-sound:hover { transform:scale(1.1); }
+
+  /* Feedback toast */
+  .feedback-toast {
+    position:fixed; top:80px; left:50%; transform:translateX(-50%) translateY(-100px);
+    font-family:'Fredoka One',cursive; font-size:1.5rem;
+    padding:14px 36px; border-radius:50px;
+    box-shadow:0 8px 30px rgba(0,0,0,.2);
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+    z-index:999; pointer-events:none;
+  }
+  .feedback-toast.show { transform:translateX(-50%) translateY(0); }
+  .feedback-toast.ok { background:var(--green-main); color:#fff; }
+  .feedback-toast.fail { background:var(--red); color:#fff; }
+
+  /* Next btn */
+  .btn-next {
+    display:none; margin:2rem auto 0;
+    background:var(--purple-main); color:var(--white);
+    font-family:'Fredoka One',cursive; font-size:1.15rem;
+    padding:13px 40px; border-radius:40px; border:none; cursor:pointer;
+    box-shadow:0 6px 18px rgba(107,33,168,.3); transition:transform .15s;
+  }
+  .btn-next:hover { transform:translateY(-2px); }
+  .btn-next.visible { display:block; }
+
+  /* ─── DESAFÍOS DE ORTOGRAFÍA ─── */
+  .spell-stage { }
+  .spell-word-display {
+    font-family:'Fredoka One',cursive; font-size:clamp(2rem,6vw,3.5rem);
+    color:var(--purple-dark); text-align:center; letter-spacing:6px;
+    margin:1.5rem 0; min-height:70px;
+  }
+  .blank { display:inline-block; border-bottom:4px solid var(--purple-main); min-width:48px; color:var(--purple-main); }
+  .spell-hint-img { font-size:5rem; text-align:center; margin-bottom:.5rem; display:block; }
+
+  /* Letter keyboard */
+  .letter-keyboard { display:flex; flex-wrap:wrap; gap:.7rem; justify-content:center; margin:2rem 0; }
+  .key-btn {
+    font-family:'Fredoka One',cursive; font-size:1.4rem;
+    width:54px; height:54px; border-radius:14px;
+    border:2.5px solid var(--purple-light); background:var(--white);
+    color:var(--purple-main); cursor:pointer; transition:all .15s;
+  }
+  .key-btn:hover:not(:disabled) { background:var(--purple-main); color:var(--white); transform:scale(1.08); }
+  .key-btn:disabled { opacity:.35; cursor:not-allowed; }
+  .btn-delete {
+    font-family:'Nunito',sans-serif; font-weight:800; font-size:1rem;
+    padding:0 16px; width:auto; border-color:var(--red); color:var(--red);
+  }
+  .btn-delete:hover:not(:disabled) { background:var(--red); color:#fff; }
+
+  /* Type mode input */
+  .spell-input-wrap { display:flex; gap:1rem; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .spell-input {
+    font-family:'Fredoka One',cursive; font-size:2rem; letter-spacing:4px;
+    border:3px solid var(--purple-light); border-radius:16px;
+    padding:10px 24px; outline:none; color:var(--purple-dark); text-align:center;
+    width:min(300px,80vw); transition:border-color .2s;
+  }
+  .spell-input:focus { border-color:var(--purple-main); }
+  .btn-check {
+    background:var(--green-main); color:var(--white);
+    font-family:'Fredoka One',cursive; font-size:1.1rem;
+    padding:12px 30px; border-radius:30px; border:none; cursor:pointer;
+    transition:transform .15s;
+  }
+  .btn-check:hover { transform:scale(1.05); }
+
+  /* Mode toggle */
+  .mode-toggle { display:flex; gap:.5rem; justify-content:center; margin-bottom:1.5rem; }
+  .mode-btn {
+    font-family:'Fredoka One',cursive; font-size:.95rem;
+    padding:7px 20px; border-radius:20px; border:2px solid var(--purple-light);
+    background:var(--white); color:var(--purple-main); cursor:pointer; transition:all .2s;
+  }
+  .mode-btn.active { background:var(--purple-main); color:#fff; border-color:var(--purple-main); }
+
+  /* Difficulty selector */
+  .diff-row { display:flex; gap:.5rem; justify-content:center; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .diff-btn {
+    font-family:'Fredoka One',cursive; font-size:.9rem;
+    padding:6px 18px; border-radius:20px; border:2px solid transparent;
+    cursor:pointer; transition:all .2s;
+  }
+  .diff-btn[data-diff="facil"] { background:#dcfce7; color:#166534; border-color:#16a34a; }
+  .diff-btn[data-diff="medio"] { background:#fef9c3; color:#854d0e; border-color:#ca8a04; }
+  .diff-btn[data-diff="dificil"] { background:#fee2e2; color:#991b1b; border-color:#dc2626; }
+  .diff-btn.active { transform:scale(1.08); box-shadow:0 3px 10px rgba(0,0,0,.15); }
+
+  /* Lives */
+  .lives-row { display:flex; gap:6px; justify-content:center; margin-bottom:1.2rem; font-size:1.6rem; }
+
+  /* Results screen */
+  .result-screen {
+    text-align:center; padding:3rem 1rem;
+    animation:popIn .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-trophy { font-size:6rem; display:block; margin-bottom:1rem; }
+  .result-title { font-family:'Fredoka One',cursive; font-size:2.2rem; color:var(--purple-dark); margin-bottom:.5rem; }
+  .result-score { font-size:1.1rem; color:var(--gray-mid); font-weight:700; margin-bottom:2rem; }
+  .result-medals { font-size:2.5rem; display:flex; gap:.5rem; justify-content:center; margin-bottom:2rem; }
+  .btn-replay {
+    background:var(--purple-main); color:#fff;
+    font-family:'Fredoka One',cursive; font-size:1.15rem;
+    padding:13px 40px; border-radius:40px; border:none; cursor:pointer;
+    box-shadow:0 6px 18px rgba(107,33,168,.3); transition:transform .15s; margin:0 .5rem;
+  }
+  .btn-replay:hover { transform:translateY(-2px); }
+  .btn-replay.secondary { background:var(--white); color:var(--purple-main); border:2px solid var(--purple-main); box-shadow:none; }
+
+  /* Responsive */
+  @media(max-width:600px) {
+    .game-container { padding:1.5rem 1rem; }
+    .img-options { grid-template-columns:repeat(2,1fr); }
+    .key-btn { width:44px; height:44px; font-size:1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="feedback-toast" id="toast"></div>
+
+<header>
+  <div class="header-inner">
+    <a href="letrasaurio.html" class="logo">
+      <span class="logo-dino">🦕</span>
+      <span class="logo-text">LETRA<span>SAURIO</span></span>
+    </a>
+    <div class="score-bar">
+      <a href="letrasaurio.html" class="btn-login" style="margin-right:.5rem;">← Inicio</a>
+      <div class="score-pill">⭐ <span id="global-score">0</span> pts</div>
+      <div class="medal-pill">🏅 <span id="global-medals">0</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('letras')">🔤 Juego de Letras</button>
+  <button class="tab-btn" onclick="switchTab('ortografia')">✍️ Desafíos de Ortografía</button>
+</div>
+
+<main>
+
+  <!-- ═══ PANEL: JUEGO DE LETRAS ═══ -->
+  <div class="panel active" id="panel-letras">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="game-title">🔤 Juego de Letras</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:.9rem;font-weight:700;color:var(--gray-mid);" id="l-counter">1 / 10</span>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="l-progress" style="width:10%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="letras-game">
+        <div class="letter-stage">
+          <button class="btn-sound" id="l-sound-btn" onclick="playLetterSound()" title="Escuchar sonido">🔊</button>
+          <div class="big-letter" id="l-big" onclick="playLetterSound()">A</div>
+          <div class="letter-hint" id="l-hint">¿Cuál imagen comienza con esta letra?</div>
+          <div class="img-options" id="l-options"></div>
+          <button class="btn-next" id="l-next" onclick="nextLetter()">Siguiente ➡️</button>
+        </div>
+      </div>
+
+      <div id="letras-result" style="display:none;">
+        <div class="result-screen">
+          <span class="result-trophy" id="l-trophy">🏆</span>
+          <div class="result-title" id="l-result-title">¡Excelente!</div>
+          <div class="result-score" id="l-result-score"></div>
+          <div class="result-medals" id="l-result-medals"></div>
+          <button class="btn-replay" onclick="initLetras()">🔄 Jugar de nuevo</button>
+          <button class="btn-replay secondary" onclick="switchTab('ortografia')">✍️ Ir a Ortografía</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL: DESAFÍOS DE ORTOGRAFÍA ═══ -->
+  <div class="panel" id="panel-ortografia">
+    <div class="game-container">
+      <div class="game-header">
+        <div class="game-title">✍️ Desafíos de Ortografía</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:.9rem;font-weight:700;color:var(--gray-mid);" id="s-counter">1 / 8</span>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="s-progress" style="width:12%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="spell-game">
+        <div class="diff-row">
+          <button class="diff-btn active" data-diff="facil" onclick="setDiff(this,'facil')">🟢 Fácil</button>
+          <button class="diff-btn" data-diff="medio" onclick="setDiff(this,'medio')">🟡 Medio</button>
+          <button class="diff-btn" data-diff="dificil" onclick="setDiff(this,'dificil')">🔴 Difícil</button>
+        </div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" onclick="setMode(this,'teclado')">⌨️ Teclado</button>
+          <button class="mode-btn" onclick="setMode(this,'escribir')">🖊️ Escribir</button>
+        </div>
+        <div class="lives-row" id="s-lives"></div>
+
+        <div class="spell-stage">
+          <span class="spell-hint-img" id="s-img">🍎</span>
+          <button class="btn-sound" id="s-sound-btn" onclick="playWordSound()" style="display:block;margin:0 auto .5rem;" title="Escuchar dictado">🔊</button>
+          <div class="spell-word-display" id="s-display"></div>
+
+          <!-- Modo teclado -->
+          <div id="mode-teclado">
+            <div class="letter-keyboard" id="s-keyboard"></div>
+          </div>
+
+          <!-- Modo escribir -->
+          <div id="mode-escribir" style="display:none;">
+            <div class="spell-input-wrap">
+              <input class="spell-input" id="s-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Escribe aquí…" />
+              <button class="btn-check" onclick="checkTyped()">✔ Verificar</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn-next" id="s-next" onclick="nextWord()">Siguiente ➡️</button>
+      </div>
+
+      <div id="spell-result" style="display:none;">
+        <div class="result-screen">
+          <span class="result-trophy" id="s-trophy">🏆</span>
+          <div class="result-title" id="s-result-title">¡Increíble!</div>
+          <div class="result-score" id="s-result-score"></div>
+          <div class="result-medals" id="s-result-medals"></div>
+          <button class="btn-replay" onclick="initSpell()">🔄 Jugar de nuevo</button>
+          <button class="btn-replay secondary" onclick="switchTab('letras')">🔤 Ir a Letras</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════════════════
+// GLOBAL STATE
+// ══════════════════════════════════════════════════════
+const STATE = {
+  score: 0,
+  medals: 0
+};
+
+function addScore(pts) {
+  STATE.score += pts;
+  document.getElementById('global-score').textContent = STATE.score;
+}
+function addMedal() {
+  STATE.medals++;
+  document.getElementById('global-medals').textContent = STATE.medals;
+}
+
+// ══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0&&tab==='letras')||(i===1&&tab==='ortografia'));
+  });
+  document.getElementById('panel-letras').classList.toggle('active', tab==='letras');
+  document.getElementById('panel-ortografia').classList.toggle('active', tab==='ortografia');
+}
+
+// ══════════════════════════════════════════════════════
+// AUDIO (Web Speech API)
+// ══════════════════════════════════════════════════════
+function speak(text, rate=0.7) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'es-MX';
+  u.rate = rate;
+  u.pitch = 1.1;
+  window.speechSynthesis.speak(u);
+}
+
+// ══════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `feedback-toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ══════════════════════════════════════════════════════
+// DATA — JUEGO DE LETRAS
+// ══════════════════════════════════════════════════════
+const LETRAS_DATA = [
+  { letra:'A', correct:{emoji:'🍎',label:'Avión'},  wrong:[{emoji:'🐟',label:'Pez'},{emoji:'🌙',label:'Luna'},{emoji:'🐕',label:'Perro'}] },
+  { letra:'B', correct:{emoji:'🐝',label:'Burro'},  wrong:[{emoji:'🌺',label:'Rosa'},{emoji:'🍋',label:'Limón'},{emoji:'🦊',label:'Zorro'}] },
+  { letra:'C', correct:{emoji:'🏠',label:'Casa'},   wrong:[{emoji:'🐘',label:'Elefante'},{emoji:'🌊',label:'Ola'},{emoji:'🎸',label:'Guitarra'}] },
+  { letra:'D', correct:{emoji:'🦷',label:'Diente'}, wrong:[{emoji:'🍓',label:'Fresa'},{emoji:'🐢',label:'Tortuga'},{emoji:'🌵',label:'Cactus'}] },
+  { letra:'E', correct:{emoji:'⭐',label:'Estrella'},wrong:[{emoji:'🐸',label:'Rana'},{emoji:'🍕',label:'Pizza'},{emoji:'🎩',label:'Sombrero'}] },
+  { letra:'F', correct:{emoji:'🌸',label:'Flor'},   wrong:[{emoji:'🚂',label:'Tren'},{emoji:'🐻',label:'Oso'},{emoji:'🍦',label:'Helado'}] },
+  { letra:'G', correct:{emoji:'🐱',label:'Gato'},   wrong:[{emoji:'🎁',label:'Regalo'},{emoji:'🍇',label:'Uvas'},{emoji:'🦋',label:'Mariposa'}] },
+  { letra:'H', correct:{emoji:'🍄',label:'Hongo'},  wrong:[{emoji:'🐬',label:'Delfín'},{emoji:'🌈',label:'Arcoíris'},{emoji:'🚀',label:'Cohete'}] },
+  { letra:'I', correct:{emoji:'🏝️',label:'Isla'},   wrong:[{emoji:'🐼',label:'Panda'},{emoji:'🎵',label:'Nota'},{emoji:'🌻',label:'Girasol'}] },
+  { letra:'J', correct:{emoji:'🦒',label:'Jirafa'}, wrong:[{emoji:'🍌',label:'Banana'},{emoji:'🐙',label:'Pulpo'},{emoji:'🏈',label:'Balón'}] },
+];
+
+// ══════════════════════════════════════════════════════
+// JUEGO DE LETRAS — LOGIC
+// ══════════════════════════════════════════════════════
+let lIdx = 0, lScore = 0, lAnswered = false, lData = [];
+
+function initLetras() {
+  lIdx = 0; lScore = 0; lAnswered = false;
+  lData = shuffle([...LETRAS_DATA]);
+  document.getElementById('letras-result').style.display = 'none';
+  document.getElementById('letras-game').style.display = 'block';
+  renderLetter();
+}
+
+function renderLetter() {
+  if (lIdx >= lData.length) { showLetrasResult(); return; }
+  lAnswered = false;
+  const d = lData[lIdx];
+  document.getElementById('l-big').textContent = d.letra;
+  document.getElementById('l-counter').textContent = `${lIdx+1} / ${lData.length}`;
+  document.getElementById('l-progress').style.width = `${((lIdx)/lData.length)*100}%`;
+  document.getElementById('l-next').classList.remove('visible');
+
+  // Build shuffled options
+  const opts = shuffle([d.correct, ...d.wrong]);
+  const container = document.getElementById('l-options');
+  container.innerHTML = '';
+  opts.forEach(opt => {
+    const card = document.createElement('div');
+    card.className = 'img-card';
+    card.innerHTML = `${opt.emoji}<span class="img-label">${opt.label}</span>`;
+    card.onclick = () => handleLetterAnswer(card, opt, d.correct);
+    container.appendChild(card);
+  });
+}
+
+function handleLetterAnswer(card, chosen, correct) {
+  if (lAnswered) return;
+  lAnswered = true;
+  const isCorrect = chosen.label === correct.label;
+  if (isCorrect) {
+    card.classList.add('correct');
+    addScore(10);
+    lScore++;
+    showToast('¡Correcto! 🎉', 'ok');
+    speak('¡Muy bien!');
+  } else {
+    card.classList.add('wrong');
+    // Highlight correct
+    document.querySelectorAll('.img-card').forEach(c => {
+      if (c.querySelector('.img-label').textContent === correct.label) c.classList.add('correct');
+    });
+    showToast('¡Inténtalo de nuevo! 💪', 'fail');
+    speak('Casi, intenta de nuevo');
+  }
+  document.getElementById('l-next').classList.add('visible');
+}
+
+function playLetterSound() {
+  if (lIdx < lData.length) speak(lData[lIdx].letra, 0.5);
+}
+
+function nextLetter() {
+  lIdx++;
+  renderLetter();
+}
+
+function showLetrasResult() {
+  document.getElementById('letras-game').style.display = 'none';
+  const res = document.getElementById('letras-result');
+  res.style.display = 'block';
+  const pct = Math.round((lScore / lData.length) * 100);
+  let trophy='🏆', title='¡Excelente trabajo!', medals='🥇🥇🥇';
+  if (pct < 50) { trophy='🦕'; title='¡Sigue practicando!'; medals=''; }
+  else if (pct < 80) { trophy='🌟'; title='¡Muy bien hecho!'; medals='🥈🥈'; }
+  document.getElementById('l-trophy').textContent = trophy;
+  document.getElementById('l-result-title').textContent = title;
+  document.getElementById('l-result-score').textContent = `Acertaste ${lScore} de ${lData.length} letras (${pct}%)`;
+  document.getElementById('l-result-medals').textContent = medals;
+  if (pct >= 80) addMedal();
+  speak(title, 0.9);
+}
+
+// ══════════════════════════════════════════════════════
+// DATA — DESAFÍOS DE ORTOGRAFÍA
+// ══════════════════════════════════════════════════════
+const SPELL_DATA = {
+  facil: [
+    { word:'SOL',  emoji:'☀️', hint:'Astro que da luz' },
+    { word:'MAR',  emoji:'🌊', hint:'Agua salada grande' },
+    { word:'PAN',  emoji:'🍞', hint:'Alimento de harina' },
+    { word:'OJO',  emoji:'👁️', hint:'Para ver' },
+    { word:'PIE',  emoji:'🦶', hint:'Parte del cuerpo' },
+    { word:'LUZ',  emoji:'💡', hint:'Ilumina el cuarto' },
+    { word:'TEN',  emoji:'🍴', hint:'Utensilio de mesa'},
+    { word:'RED',  emoji:'🕸️', hint:'Trampa tejida' },
+  ],
+  medio: [
+    { word:'BURRO',  emoji:'🐴', hint:'Animal de carga' },
+    { word:'FLOR',   emoji:'🌺', hint:'Planta que huele bien' },
+    { word:'GATO',   emoji:'🐱', hint:'Animal que maúlla' },
+    { word:'LIBRO',  emoji:'📚', hint:'Para leer historias' },
+    { word:'NIEVE',  emoji:'❄️', hint:'Agua congelada del cielo' },
+    { word:'PERRO',  emoji:'🐕', hint:'Animal que ladra' },
+    { word:'COHETE', emoji:'🚀', hint:'Va al espacio' },
+    { word:'TIGRE',  emoji:'🐯', hint:'Felino rayado' },
+  ],
+  dificil: [
+    { word:'ESTRELLA',  emoji:'⭐', hint:'Brilla en el cielo' },
+    { word:'MARIPOSA',  emoji:'🦋', hint:'Insecto con alas bonitas' },
+    { word:'DINOSAURIO',emoji:'🦕', hint:'Animal prehistórico' },
+    { word:'CHOCOLATE', emoji:'🍫', hint:'Dulce marrón' },
+    { word:'ELEFANTE',  emoji:'🐘', hint:'Animal con trompa' },
+    { word:'JITOMATE',  emoji:'🍅', hint:'Fruta/verdura roja' },
+    { word:'COCODRILO', emoji:'🐊', hint:'Reptil de río' },
+    { word:'MURCIÉLAGO',emoji:'🦇', hint:'Vuela de noche' },
+  ]
+};
+
+// ══════════════════════════════════════════════════════
+// DESAFÍOS DE ORTOGRAFÍA — LOGIC
+// ══════════════════════════════════════════════════════
+let sMode = 'teclado', sDiff = 'facil';
+let sIdx = 0, sScore = 0, sLives = 3, sTyped = '', sData = [], sAnswered = false;
+
+function setMode(btn, mode) {
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sMode = mode;
+  document.getElementById('mode-teclado').style.display = mode==='teclado' ? 'block' : 'none';
+  document.getElementById('mode-escribir').style.display = mode==='escribir' ? 'block' : 'none';
+  renderWord();
+}
+
+function setDiff(btn, diff) {
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sDiff = diff;
+  initSpell();
+}
+
+function initSpell() {
+  sIdx = 0; sScore = 0; sLives = 3; sTyped = ''; sAnswered = false;
+  sData = shuffle([...SPELL_DATA[sDiff]]);
+  document.getElementById('spell-result').style.display = 'none';
+  document.getElementById('spell-game').style.display = 'block';
+  renderLives();
+  renderWord();
+}
+
+function renderLives() {
+  document.getElementById('s-lives').innerHTML = Array(3).fill(0)
+    .map((_,i) => i < sLives ? '❤️' : '🖤').join('');
+}
+
+function renderWord() {
+  if (sIdx >= sData.length) { showSpellResult(); return; }
+  sAnswered = false; sTyped = '';
+  const d = sData[sIdx];
+  document.getElementById('s-counter').textContent = `${sIdx+1} / ${sData.length}`;
+  document.getElementById('s-progress').style.width = `${((sIdx)/sData.length)*100}%`;
+  document.getElementById('s-img').textContent = d.emoji;
+  document.getElementById('s-next').classList.remove('visible');
+  if (document.getElementById('s-input')) document.getElementById('s-input').value = '';
+
+  updateDisplay();
+  buildKeyboard(d.word);
+}
+
+function updateDisplay() {
+  const d = sData[sIdx];
+  const word = d.word;
+  let html = '';
+  for (let i=0; i<word.length; i++) {
+    if (sTyped[i]) {
+      html += `<span style="color:var(--purple-main)">${sTyped[i]}</span>`;
+    } else {
+      html += `<span class="blank">&nbsp;&nbsp;</span>`;
+    }
+    if (i < word.length-1) html += ' ';
+  }
+  document.getElementById('s-display').innerHTML = html;
+}
+
+function buildKeyboard(word) {
+  // Build letter set: correct letters + noise
+  const correct = [...new Set(word.split(''))];
+  const all = 'ABCDEFGHIJKLMNOPQRSTUVWXYZÑ'.split('');
+  const noise = shuffle(all.filter(l => !correct.includes(l))).slice(0, 8 - correct.length);
+  const keys = shuffle([...correct, ...noise]);
+
+  const kb = document.getElementById('s-keyboard');
+  kb.innerHTML = '';
+  keys.forEach(k => {
+    const btn = document.createElement('button');
+    btn.className = 'key-btn'; btn.textContent = k;
+    btn.onclick = () => pressKey(k, btn);
+    kb.appendChild(btn);
+  });
+  // Delete button
+  const del = document.createElement('button');
+  del.className = 'key-btn btn-delete'; del.textContent = '⌫ Borrar';
+  del.onclick = deleteKey;
+  kb.appendChild(del);
+}
+
+function pressKey(k, btn) {
+  if (sAnswered) return;
+  const word = sData[sIdx].word;
+  if (sTyped.length >= word.length) return;
+  sTyped += k;
+  btn.disabled = true;
+  updateDisplay();
+  if (sTyped.length === word.length) {
+    setTimeout(() => checkAnswer(), 300);
+  }
+}
+
+function deleteKey() {
+  if (!sTyped.length) return;
+  const last = sTyped[sTyped.length-1];
+  sTyped = sTyped.slice(0,-1);
+  // Re-enable button
+  document.querySelectorAll('.key-btn:not(.btn-delete)').forEach(b => {
+    if (b.textContent === last && b.disabled) { b.disabled = false; return; }
+  });
+  updateDisplay();
+}
+
+function checkTyped() {
+  if (sAnswered) return;
+  const val = document.getElementById('s-input').value.toUpperCase().trim();
+  sTyped = val;
+  checkAnswer();
+}
+
+function checkAnswer() {
+  if (sAnswered) return;
+  sAnswered = true;
+  const word = sData[sIdx].word;
+  const correct = sTyped === word;
+
+  // Show full word revealed
+  document.getElementById('s-display').innerHTML =
+    word.split('').map((l,i) => {
+      const typed = sTyped[i];
+      if (!typed) return `<span style="color:var(--orange)">${l}</span>`;
+      const ok = typed === l;
+      return `<span style="color:${ok?'var(--green-main)':'var(--red)'}">${l}</span>`;
+    }).join(' ');
+
+  if (correct) {
+    const pts = sDiff==='facil'?10:sDiff==='medio'?20:30;
+    addScore(pts);
+    sScore++;
+    showToast('¡Perfecto! 🎉', 'ok');
+    speak('¡Excelente!');
+  } else {
+    sLives--;
+    renderLives();
+    showToast(`Era: ${word} 💪`, 'fail');
+    speak(word, 0.6);
+    if (sLives <= 0) {
+      setTimeout(showSpellResult, 1200);
+      return;
+    }
+  }
+  document.getElementById('s-next').classList.add('visible');
+}
+
+function playWordSound() {
+  if (sIdx < sData.length) speak(sData[sIdx].word, 0.5);
+}
+
+function nextWord() {
+  sIdx++;
+  renderWord();
+}
+
+function showSpellResult() {
+  document.getElementById('spell-game').style.display = 'none';
+  const res = document.getElementById('spell-result');
+  res.style.display = 'block';
+  const pct = Math.round((sScore / sData.length) * 100);
+  let trophy='🏆', title='¡Eres un campeón!', medals='🥇🥇🥇';
+  if (pct < 50) { trophy='🦕'; title='¡Sigue practicando!'; medals=''; }
+  else if (pct < 80) { trophy='🌟'; title='¡Muy buen trabajo!'; medals='🥈🥈'; }
+  document.getElementById('s-trophy').textContent = trophy;
+  document.getElementById('s-result-title').textContent = title;
+  document.getElementById('s-result-score').textContent = `Acertaste ${sScore} de ${sData.length} palabras (${pct}%)`;
+  document.getElementById('s-result-medals').textContent = medals;
+  if (pct >= 80) addMedal();
+  speak(title, 0.9);
+}
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function shuffle(arr) {
+  for (let i=arr.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+initLetras();
+initSpell();
+
+// Deep-link: letrasaurio-juegos.html#ortografia abre ese tab directo
+if (window.location.hash === '#ortografia') switchTab('ortografia');
+</script>
+</body>
+</html>
