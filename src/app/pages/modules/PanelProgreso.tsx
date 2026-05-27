@@ -143,8 +143,8 @@ export default function PanelProgreso() {
 
   const getNivel = (nivel: number) => {
     if (nivel <= 1) return "Explorador";
-    if (nivel <= 3) return "Aventurero";
-    if (nivel <= 5) return "Campeón";
+    if (nivel === 2) return "Aventurero";
+    if (nivel === 3) return "Campeón";
     return "Maestro";
   };
 

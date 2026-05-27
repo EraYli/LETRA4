@@ -69,7 +69,6 @@ export default function NinoDashboard() {
   const modules = [
     { title: "Juego de Letras",        description: "Aprende las letras jugando",  link: "/juego-letras",         gradient: "from-[#7C3AED] to-[#A855F7]", icon: "🔤" },
     { title: "Desafíos de Ortografía", description: "Practica tu escritura",        link: "/desafios-ortografia",  gradient: "from-[#16A34A] to-[#4ADE80]", icon: "✍️" },
-    { title: "Mi Progreso",            description: "Ve tus logros y medallas",     link: "/mi-progreso",          gradient: "from-[#F97316] to-[#FDE68A]", icon: "🏆" },
   ];
 
   return (
@@ -115,7 +114,7 @@ export default function NinoDashboard() {
         </div>
 
         {/* Modules Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           {modules.map((module, index) => {
             const progress = progresoPorModulo[module.title] ?? 0;
             return (
@@ -128,16 +127,12 @@ export default function NinoDashboard() {
                   <div className="text-[3.5rem] mb-3">{module.icon}</div>
                   <h3 className="font-['Fredoka_One',cursive] text-[1.5rem] mb-2">{module.title}</h3>
                   <p className="text-[0.95rem] font-semibold opacity-90 mb-4">{module.description}</p>
-                  {module.title !== "Mi Progreso" && (
-                    <>
-                      {progress < 100 && (
-                        <div className="bg-white/20 rounded-full h-2 mb-2">
-                          <div className="bg-white rounded-full h-2 transition-all" style={{ width: `${progress}%` }} />
-                        </div>
-                      )}
-                      <p className="text-[0.85rem] font-bold opacity-90">{progress}% completado</p>
-                    </>
+                  {progress < 100 && (
+                    <div className="bg-white/20 rounded-full h-2 mb-2">
+                      <div className="bg-white rounded-full h-2 transition-all" style={{ width: `${progress}%` }} />
+                    </div>
                   )}
+                  <p className="text-[0.85rem] font-bold opacity-90">{progress}% completado</p>
                 </div>
               </Link>
             );
@@ -145,7 +140,7 @@ export default function NinoDashboard() {
         </div>
 
         {/* Achievements board */}
-        <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
+        <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)] mb-8">
           <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">🏆 Logros que puedes obtener</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
             {LOGROS_CONFIG.map((achievement) => {
@@ -171,6 +166,35 @@ export default function NinoDashboard() {
               );
             })}
           </div>
+        </div>
+
+        {/* Progress Card below achievements */}
+        <div className="mt-8">
+          <Link
+            to="/mi-progreso"
+            className="block bg-gradient-to-r from-[#F97316] to-[#FDE68A] text-gray-800 rounded-[28px] p-8 shadow-[0_8px_30px_rgba(249,115,22,0.15)] hover:scale-[1.02] transition-all no-underline relative overflow-hidden"
+          >
+            {/* Decorative Background Emojis */}
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[6rem] opacity-20 pointer-events-none select-none">
+              🦖🏆
+            </div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-6 text-center md:text-left flex-col md:flex-row">
+                <span className="text-[4rem] filter drop-shadow-[2px_4px_6px_rgba(0,0,0,0.15)]">🏆</span>
+                <div>
+                  <h3 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-1">
+                    Mi Panel de Progreso
+                  </h3>
+                  <p className="text-[1.1rem] font-bold text-gray-700 max-w-[500px]">
+                    Revisa cuántas letras has dominado, tus medallas ganadas y tu racha de días consecutivos de aprendizaje.
+                  </p>
+                </div>
+              </div>
+              <span className="bg-[#3B0764] hover:bg-[#6B21A8] text-white font-['Fredoka_One',cursive] text-[1.1rem] px-8 py-4 rounded-full shadow-lg transition-all hover:scale-105">
+                Ver mi progreso →
+              </span>
+            </div>
+          </Link>
         </div>
       </div>
     </div>
