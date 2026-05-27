@@ -257,13 +257,13 @@ export default function DesafiosOrtografia() {
       : completadosActualizados.includes("facil") ? 2 : 1;
 
     const { data: existing } = await supabase
-      .from("progreso_usuarios").select("id, puntuacion_total")
+      .from("progreso_usuarios").select("id, puntuacion_total, nivel_actual")
       .eq("usuario_id", user.id).eq("modulo_id", moduloId).maybeSingle();
 
     if (existing) {
       await supabase.from("progreso_usuarios").update({
         puntuacion_total: Math.max(existing.puntuacion_total || 0, nuevoScore),
-        nivel_actual: nivelNum,
+        nivel_actual: Math.max(existing.nivel_actual || 1, nivelNum),
         ultima_conexion: new Date().toISOString(),
       }).eq("id", existing.id);
     } else {

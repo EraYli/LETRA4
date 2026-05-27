@@ -18,7 +18,7 @@ export default function NinoDashboard() {
       if (!modulos) return;
       const { data: progresos } = await supabase
         .from('progreso_usuarios')
-        .select('modulo_id, letras_dominadas, puntuacion_total')
+        .select('modulo_id, letras_dominadas, puntuacion_total, nivel_actual')
         .eq('usuario_id', user.id);
 
       const nuevosProgresos: Record<string, number> = {};
@@ -27,7 +27,8 @@ export default function NinoDashboard() {
         if (modulo.titulo === 'Juego de Letras') {
           nuevosProgresos[modulo.titulo] = Math.round(((p?.letras_dominadas?.length || 0) / 27) * 100);
         } else if (modulo.titulo === 'Desafíos de Ortografía') {
-          nuevosProgresos[modulo.titulo] = Math.min(Math.round(((p?.puntuacion_total || 0) / 100) * 100), 100);
+          const completedLevels = p?.nivel_actual ? Math.max(0, p.nivel_actual - 1) : 0;
+          nuevosProgresos[modulo.titulo] = Math.min(Math.round((completedLevels / 3) * 100), 100);
         } else {
           nuevosProgresos[modulo.titulo] = 100;
         }
