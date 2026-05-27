@@ -141,14 +141,64 @@ export default function JuegoLetras() {
         }]);
     }
 
-    if (nuevasLetras.length === 1) await otorgarLogro('¡Primera letra aprendida!', '🎯');
-    else if (nuevasLetras.length === 10) await otorgarLogro('¡10 letras dominadas!', '🏆');
-    else if (nuevasLetras.length === 27) await otorgarLogro('¡Abecedario completo!', '🌟');
+    if (nuevasLetras.length === 1) {
+      await otorgarLogro('¡Cascarón Roto!', '🥚');
+    }
+    const vocales = ["A", "E", "I", "O", "U"];
+    const tieneVocales = vocales.every(v => nuevasLetras.includes(v));
+    if (tieneVocales) {
+      await otorgarLogro('Explorador de Vocales', '🅰️');
+    }
+    if (nuevasLetras.length >= 14) {
+      await otorgarLogro('Paso de Gigante', '🦕');
+    }
+    const consonantes = nuevasLetras.filter(l => !vocales.includes(l));
+    if (consonantes.length >= 10) {
+      await otorgarLogro('Rey de las Consonantes', '🦁');
+    }
+    if (nuevasLetras.length === 27) {
+      await otorgarLogro('¡Rex del Abecedario!', '🦖');
+    }
+
+    await verificarLogrosGenerales(nuevoScore);
+  };
+
+  const verificarLogrosGenerales = async (puntosActuales: number) => {
+    if (!user) return;
+    if (puntosActuales >= 100) await otorgarLogro('Buscador de Estrellas', '🌟');
+    if (puntosActuales >= 500) await otorgarLogro('Dino de Diamante', '💎');
+    if (puntosActuales >= 1000) await otorgarLogro('Campeón Legendario', '🏆');
+
+    const { data: progresos } = await supabase
+      .from('progreso_usuarios')
+      .select('racha_dias')
+      .eq('usuario_id', user.id);
+
+    if (progresos && progresos.length > 0) {
+      const maxRacha = Math.max(...progresos.map(p => p.racha_dias || 0));
+      if (maxRacha >= 2) await otorgarLogro('Dino Madrugador', '☀️');
+      if (maxRacha >= 5) await otorgarLogro('Fuerza Volcánica', '🌋');
+      if (maxRacha >= 10) await otorgarLogro('Corona Prehistórica', '👑');
+    }
   };
 
   const otorgarLogro = async (nombre: string, icono: string) => {
     if (!user) return;
-    await supabase.from('logros_medallas').insert([{ usuario_id: user.id, nombre_logro: nombre, icono }]);
+    const { data: existing } = await supabase
+      .from('logros_medallas')
+      .select('id')
+      .eq('usuario_id', user.id)
+      .eq('nombre_logro', nombre)
+      .maybeSingle();
+
+    if (!existing) {
+      await supabase.from('logros_medallas').insert([{
+        usuario_id: user.id,
+        nombre_logro: nombre,
+        icono,
+        fecha_ganado: new Date().toISOString(),
+      }]);
+    }
   };
 
   const yaAprendida = selectedLetter ? letrasAprendidas.includes(selectedLetter.letter) : false;

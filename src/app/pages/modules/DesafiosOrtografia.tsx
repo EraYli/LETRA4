@@ -178,6 +178,10 @@ export default function DesafiosOrtografia() {
   const [dificilResult, setDificilResult] = useState<"idle" | "correcto" | "incorrecto">("idle");
   const [palabraIncorrecta, setPalabraIncorrecta] = useState("");
 
+  const [erroresEnNivel, setErroresEnNivel] = useState(0);
+  const [rachaDeletreo, setRachaDeletreo] = useState(0);
+  const [erroresEnPalabra, setErroresEnPalabra] = useState(0);
+
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
@@ -246,6 +250,8 @@ export default function DesafiosOrtografia() {
     setNivelActual(nivel);
     setCurrentQuestion(0);
     setPreguntasCorrectas(0);
+    setErroresEnNivel(0);
+    setErroresEnPalabra(0);
     setVista("jugando");
   };
 
@@ -276,13 +282,54 @@ export default function DesafiosOrtografia() {
 
     if (!nivelesCompletados.includes(nivelActual)) {
       const logros: Record<Nivel, [string, string]> = {
-        facil:   ["¡Nivel Fácil completado!",  "🌱"],
-        medio:   ["¡Nivel Medio completado!",   "🔥"],
-        dificil: ["¡Maestro de Ortografía!",    "⚡"],
+        facil:   ["Brote Ortográfico",  "🌱"],
+        medio:   ["Escritura de Fuego",   "🔥"],
+        dificil: ["Velocirráptor de Palabras",    "⚡"],
       };
       const [nombre, icono] = logros[nivelActual];
-      await supabase.from("logros_medallas").insert([{
-        usuario_id: user.id, nombre_logro: nombre, icono,
+      await otorgarLogro(nombre, icono);
+    }
+
+    if (erroresEnNivel === 0) {
+      await otorgarLogro("Escudo Impecable", "🛡️");
+    }
+
+    await verificarLogrosGenerales(nuevoScore);
+  };
+
+  const verificarLogrosGenerales = async (puntosActuales: number) => {
+    if (!user) return;
+    if (puntosActuales >= 100) await otorgarLogro('Buscador de Estrellas', '🌟');
+    if (puntosActuales >= 500) await otorgarLogro('Dino de Diamante', '💎');
+    if (puntosActuales >= 1000) await otorgarLogro('Campeón Legendario', '🏆');
+
+    const { data: progresos } = await supabase
+      .from('progreso_usuarios')
+      .select('racha_dias')
+      .eq('usuario_id', user.id);
+
+    if (progresos && progresos.length > 0) {
+      const maxRacha = Math.max(...progresos.map(p => p.racha_dias || 0));
+      if (maxRacha >= 2) await otorgarLogro('Dino Madrugador', '☀️');
+      if (maxRacha >= 5) await otorgarLogro('Fuerza Volcánica', '🌋');
+      if (maxRacha >= 10) await otorgarLogro('Corona Prehistórica', '👑');
+    }
+  };
+
+  const otorgarLogro = async (nombre: string, icono: string) => {
+    if (!user) return;
+    const { data: existing } = await supabase
+      .from('logros_medallas')
+      .select('id')
+      .eq('usuario_id', user.id)
+      .eq('nombre_logro', nombre)
+      .maybeSingle();
+
+    if (!existing) {
+      await supabase.from('logros_medallas').insert([{
+        usuario_id: user.id,
+        nombre_logro: nombre,
+        icono,
         fecha_ganado: new Date().toISOString(),
       }]);
     }
@@ -315,7 +362,20 @@ export default function DesafiosOrtografia() {
       setScore(nuevoScore);
       const nuevasCorrectas = preguntasCorrectas + 1;
       setPreguntasCorrectas(nuevasCorrectas);
+
+      let nuevaRacha = rachaDeletreo;
+      if (erroresEnPalabra === 0) {
+        nuevaRacha = rachaDeletreo + 1;
+        setRachaDeletreo(nuevaRacha);
+        if (nuevaRacha >= 5) otorgarLogro("Racha de Deletreo", "🎯");
+      }
+      setErroresEnPalabra(0);
+
       setTimeout(() => avanzarOTerminar(nuevasCorrectas, nuevoScore), 1500);
+    } else {
+      setErroresEnNivel(prev => prev + 1);
+      setErroresEnPalabra(prev => prev + 1);
+      setRachaDeletreo(0);
     }
   };
 
@@ -339,6 +399,15 @@ export default function DesafiosOrtografia() {
           setScore(nuevoScore);
           const nuevasCorrectas = preguntasCorrectas + 1;
           setPreguntasCorrectas(nuevasCorrectas);
+
+          let nuevaRacha = rachaDeletreo;
+          if (erroresEnPalabra === 0) {
+            nuevaRacha = rachaDeletreo + 1;
+            setRachaDeletreo(nuevaRacha);
+            if (nuevaRacha >= 5) otorgarLogro("Racha de Deletreo", "🎯");
+          }
+          setErroresEnPalabra(0);
+
           setTimeout(() => avanzarOTerminar(nuevasCorrectas, nuevoScore), 1000);
         } else {
           setHuecoActual(siguiente);
@@ -348,6 +417,10 @@ export default function DesafiosOrtografia() {
     } else {
       // ✅ CAMBIO 2: mensaje dura más y baraja al desaparecer
       setMedioError(true);
+      setErroresEnNivel(prev => prev + 1);
+      setErroresEnPalabra(prev => prev + 1);
+      setRachaDeletreo(0);
+
       setTimeout(() => {
         setMedioError(false);
         setOpcionesMedioBarajadas(shuffleArr(q.blanks[huecoActual].options));
@@ -370,12 +443,26 @@ export default function DesafiosOrtografia() {
     const formada = letrasColocadas.map(l => l.letra).join("");
     const correcto = formada === q.word;
     setDificilResult(correcto ? "correcto" : "incorrecto");
-    if (!correcto) setPalabraIncorrecta(formada);
+    if (!correcto) {
+      setPalabraIncorrecta(formada);
+      setErroresEnNivel(prev => prev + 1);
+      setErroresEnPalabra(prev => prev + 1);
+      setRachaDeletreo(0);
+    }
     if (correcto) {
       const nuevoScore = score + 25;
       setScore(nuevoScore);
       const nuevasCorrectas = preguntasCorrectas + 1;
       setPreguntasCorrectas(nuevasCorrectas);
+
+      let nuevaRacha = rachaDeletreo;
+      if (erroresEnPalabra === 0) {
+        nuevaRacha = rachaDeletreo + 1;
+        setRachaDeletreo(nuevaRacha);
+        if (nuevaRacha >= 5) otorgarLogro("Racha de Deletreo", "🎯");
+      }
+      setErroresEnPalabra(0);
+
       setTimeout(() => avanzarOTerminar(nuevasCorrectas, nuevoScore), 1500);
     }
   };

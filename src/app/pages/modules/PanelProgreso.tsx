@@ -365,22 +365,33 @@ export default function PanelProgreso() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 max-h-[220px] overflow-y-auto pr-2">
-                {logros.map((logro, index) => (
-                  <motion.div
-                    key={logro.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-gradient-to-br from-[#FAF7F0] to-[#e9d5ff] rounded-2xl p-4 text-center hover:shadow-md transition-all"
-                  >
-                    <div className="text-[2.2rem] mb-2">{logro.icono}</div>
-                    <h3 className="font-['Fredoka_One',cursive] text-[0.95rem] text-[#6B21A8] mb-1 line-clamp-1">{logro.nombre_logro}</h3>
-                    <p className="text-[0.75rem] text-gray-500 font-semibold">
-                      {new Date(logro.fecha_ganado).toLocaleDateString('es-MX')}
-                    </p>
-                  </motion.div>
-                ))}
+                {logros.map((logro, index) => {
+                  const LOGROS_MAP: Record<string, { title: string; icon: string }> = {
+                    "¡Primera letra aprendida!": { title: "¡Cascarón Roto!", icon: "🥚" },
+                    "¡Abecedario completo!": { title: "¡Rex del Abecedario!", icon: "🦖" },
+                    "¡Nivel Fácil completado!": { title: "Brote Ortográfico", icon: "🌱" },
+                    "¡Nivel Medio completado!": { title: "Escritura de Fuego", icon: "🔥" },
+                    "¡Maestro de Ortografía!": { title: "Velocirráptor de Palabras", icon: "⚡" },
+                  };
+                  const mapped = LOGROS_MAP[logro.nombre_logro] || { title: logro.nombre_logro, icon: logro.icono };
+
+                  return (
+                    <motion.div
+                      key={logro.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      className="bg-gradient-to-br from-[#FAF7F0] to-[#e9d5ff] rounded-2xl p-4 text-center hover:shadow-md transition-all"
+                    >
+                      <div className="text-[2.2rem] mb-2">{mapped.icon}</div>
+                      <h3 className="font-['Fredoka_One',cursive] text-[0.95rem] text-[#6B21A8] mb-1 line-clamp-1">{mapped.title}</h3>
+                      <p className="text-[0.75rem] text-gray-500 font-semibold">
+                        {new Date(logro.fecha_ganado).toLocaleDateString('es-MX')}
+                      </p>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </div>

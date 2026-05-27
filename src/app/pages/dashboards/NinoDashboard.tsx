@@ -5,11 +5,30 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../supabaseClient";
 import DinoLettersBg from "../../components/DinoLettersBg";
 
+const LOGROS_CONFIG = [
+  { key: "cascaron", title: "¡Cascarón Roto!", icon: "🥚", oldTitles: ["¡Primera letra aprendida!"] },
+  { key: "vocales", title: "Explorador de Vocales", icon: "🅰️" },
+  { key: "gigante", title: "Paso de Gigante", icon: "🦕" },
+  { key: "consonantes", title: "Rey de las Consonantes", icon: "🦁" },
+  { key: "rex", title: "¡Rex del Abecedario!", icon: "🦖", oldTitles: ["¡Abecedario completo!"] },
+  { key: "brote", title: "Brote Ortográfico", icon: "🌱", oldTitles: ["¡Nivel Fácil completado!"] },
+  { key: "fuego", title: "Escritura de Fuego", icon: "🔥", oldTitles: ["¡Nivel Medio completado!"] },
+  { key: "velocirraptor", title: "Velocirráptor de Palabras", icon: "⚡", oldTitles: ["¡Maestro de Ortografía!"] },
+  { key: "escudo", title: "Escudo Impecable", icon: "🛡️" },
+  { key: "racha_deletreo", title: "Racha de Deletreo", icon: "🎯" },
+  { key: "madrugador", title: "Dino Madrugador", icon: "☀️" },
+  { key: "volcanica", title: "Fuerza Volcánica", icon: "🌋" },
+  { key: "corona", title: "Corona Prehistórica", icon: "👑" },
+  { key: "estrellas", title: "Buscador de Estrellas", icon: "🌟" },
+  { key: "diamante", title: "Dino de Diamante", icon: "💎" },
+  { key: "campeon", title: "Campeón Legendario", icon: "🏆" },
+];
+
 export default function NinoDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [progresoPorModulo, setProgresoPorModulo] = useState<Record<string, number>>({});
-  const [logros, setLogros] = useState<{ icon: string; title: string; desc: string }[]>([]);
+  const [logrosUsuario, setLogrosUsuario] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -37,14 +56,10 @@ export default function NinoDashboard() {
 
       const { data: logrosData } = await supabase
         .from('logros_medallas')
-        .select('nombre_logro, icono')
-        .eq('usuario_id', user.id)
-        .order('fecha_ganado', { ascending: false })
-        .limit(3);
+        .select('nombre_logro')
+        .eq('usuario_id', user.id);
 
-      if (logrosData && logrosData.length > 0) {
-        setLogros(logrosData.map(l => ({ icon: l.icono, title: l.nombre_logro, desc: "" })));
-      }
+      setLogrosUsuario(logrosData?.map(l => l.nombre_logro) || []);
     };
     fetchData();
   }, [user]);
@@ -129,24 +144,33 @@ export default function NinoDashboard() {
           })}
         </div>
 
-        {/* Recent Achievements */}
+        {/* Achievements board */}
         <div className="bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgba(107,33,168,0.08)]">
-          <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">🏅 Tus últimos logros</h2>
-          {logros.length === 0 ? (
-            <div className="text-center py-6">
-              <p className="text-[3rem] mb-2">🎯</p>
-              <p className="font-bold text-gray-600">¡Aún no hay logros, sigue practicando!</p>
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-4">
-              {logros.map((achievement, index) => (
-                <div key={index} className="bg-[#FAF7F0] rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
-                  <div className="text-[3rem] mb-2">{achievement.icon}</div>
-                  <h3 className="font-['Fredoka_One',cursive] text-[1.1rem] text-[#6B21A8] mb-1">{achievement.title}</h3>
+          <h2 className="font-['Fredoka_One',cursive] text-[1.8rem] text-[#3B0764] mb-6">🏆 Logros que puedes obtener</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+            {LOGROS_CONFIG.map((achievement) => {
+              const unlocked = logrosUsuario.includes(achievement.title) ||
+                               (achievement.oldTitles && achievement.oldTitles.some(ot => logrosUsuario.includes(ot)));
+              return (
+                <div
+                  key={achievement.key}
+                  className={`rounded-2xl p-4 text-center transition-all duration-300 border-2 flex flex-col items-center justify-center ${
+                    unlocked
+                      ? "bg-gradient-to-br from-[#FAF7F0] to-[#e9d5ff] border-purple-200 shadow-md hover:scale-105"
+                      : "bg-gray-50 border-dashed border-gray-200 opacity-60"
+                  }`}
+                  title={achievement.title}
+                >
+                  <div className={`text-[2.8rem] mb-2 select-none transition-all ${unlocked ? "" : "filter grayscale opacity-45"}`}>
+                    {achievement.icon}
+                  </div>
+                  <h4 className={`font-['Fredoka_One',cursive] text-[0.8rem] leading-tight break-words ${unlocked ? "text-[#6B21A8]" : "text-gray-400"}`}>
+                    {achievement.title}
+                  </h4>
                 </div>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
